@@ -51,15 +51,37 @@ CollectivePlan* CommunicatorGroup::get_collective_plan(ComType comm_type) {
                                dimensions_involved, should_be_removed);
         return comm_plans[comm_type];
     } else {
+        // For subset communicator groups, preserve the original collective
+        // implementation choices (e.g., direct/halving-doubling) instead of
+        // forcing Ring, while constraining the topology membership to the
+        // involved NPUs.
+        //
+        // We construct a 1-D logical topology over only the members of this
+        // communicator group, and clone the system-level collective
+        // implementation vector so the plan remains consistent with the
+        // original system configuration.
         LogicalTopology* logical_topology = new RingTopology(
             RingTopology::Dimension::Local, generator->id, involved_NPUs);
-        std::vector<CollectiveImpl*> collective_implementation{
-            new CollectiveImpl(CollectiveImplType::Ring)};
-        std::vector<bool> dimensions_involved(1, true);
+
+        // Clone implementations so this plan owns its copies.
+        std::vector<CollectiveImpl*> impl_clones;
+        {
+            std::vector<CollectiveImpl*> base_impls =
+                generator->get_collective_implementation(comm_type);
+            impl_clones.reserve(base_impls.size());
+            for (auto* ci : base_impls) {
+                impl_clones.push_back((CollectiveImpl*)ci->clone());
+            }
+        }
+
+        // Mark all (potential) dimensions as involved. The topology itself is
+        // 1-D here, so only index 0 will be used, but we keep the vector sized
+        // to the implementation list for consistency.
+        std::vector<bool> dimensions_involved(impl_clones.size(), true);
         bool should_be_removed = true;
-        comm_plans[comm_type] =
-            new CollectivePlan(logical_topology, collective_implementation,
-                               dimensions_involved, should_be_removed);
+        comm_plans[comm_type] = new CollectivePlan(
+            logical_topology, impl_clones, dimensions_involved,
+            should_be_removed);
         return comm_plans[comm_type];
     }
     assert(false);
