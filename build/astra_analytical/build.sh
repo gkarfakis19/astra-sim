@@ -35,10 +35,18 @@ function setup() {
   fi
 }
 
+
+# link zlib everywhere
+ZLIB_LINK_FLAGS=(
+  -DCMAKE_EXE_LINKER_FLAGS="-lz"
+  -DCMAKE_SHARED_LINKER_FLAGS="-lz"
+  -DCMAKE_MODULE_LINKER_FLAGS="-lz"
+)
+
 function compile_astrasim_analytical() {
   # compile AstraSim
   cd "${BUILD_DIR:?}" || exit
-  cmake .. -DBUILDTARGET="$1"
+  cmake .. -DBUILDTARGET="$1" "${ZLIB_LINK_FLAGS[@]}"
   cmake --build . -j "${NUM_THREADS:?}"
 }
 

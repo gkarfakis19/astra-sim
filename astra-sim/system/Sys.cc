@@ -1115,17 +1115,15 @@ CollectivePhase Sys::generate_collective_phase(
         return vn;
     } else if (collective_impl->type == CollectiveImplType::CustomCollectiveImpl) {
         string filename = ((CustomCollectiveImpl*)collective_impl)->filename;
-    } 
+        CollectivePhase vn(this, queue_id, new CustomAlgorithm(filename, id));
+        return vn;
+    }
     else if (collective_impl->type == CollectiveImplType::Torus2D) {
         CollectivePhase vn(
             this, queue_id,
             new Torus2D(collective_type, id, (Torus2DTopology*)topology, data_size,
                      static_cast<Torus2DTopology::Direction>(direction),
                      injection_policy));
-        return vn;
-    } else if (collective_impl->type == CollectiveImplType::ChakraImpl) {
-        string filename = ((ChakraCollectiveImpl*)collective_impl)->filename;
-        CollectivePhase vn(this, queue_id, new CustomAlgorithm(filename, id));
         return vn;
     } else {
         LoggerFactory::get_logger("system")->critical(
