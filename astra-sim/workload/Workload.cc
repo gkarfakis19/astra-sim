@@ -182,13 +182,26 @@ void Workload::issue(shared_ptr<Chakra::FeederV3::ETFeederNode> node) {
                     issue_replay(node);
                 } else {
                     // comp node on gpu
+                    if (sys->trace_enabled) {
+                        logger->debug("issue,sys->id={}, tick={}, node->id={}, "
+                                      "node->name={}, node->type={}",
+                                      sys->id, Sys::boostedTick(), node->id(),
+                                      node->name(),
+                                      static_cast<uint64_t>(node->type()));
+                    }
                     issue_comp(node);
+                    // if (sys->id == 0) {
+                        // logger->info("comp: tick={}, node_id={}", Sys::boostedTick(), node->id());
+                    // }
                 }
             }
         } else if (node->type() == ChakraNodeType::COMM_COLL_NODE ||
                    node->type() == ChakraNodeType::COMM_SEND_NODE ||
                    node->type() == ChakraNodeType::COMM_RECV_NODE) {
             issue_comm(node);
+            // if (sys->id == 0) {
+                // logger->info("comm: tick={}, node_id={}", Sys::boostedTick(), node->id());
+            // }
         } else if (node->type() == ChakraNodeType::INVALID_NODE) {
             skip_invalid(node);
         } else if (node->type() == ChakraNodeType::METADATA_NODE) {
@@ -477,6 +490,10 @@ void Workload::call(EventType event, CallData* data) {
                         static_cast<uint64_t>(node->type()));
         }
 
+        // if (sys->id == 0) {
+            // LoggerFactory::get_logger("workload")->info("comm finished: tick={}, node_id={}", Sys::boostedTick(), node->id());
+        // }
+
         hw_resource->release(node);
         stats->record_end(node, Sys::boostedTick());
 
@@ -517,6 +534,10 @@ void Workload::call(EventType event, CallData* data) {
                             sys->id, Sys::boostedTick(), node->id(),
                             node->name(), static_cast<uint64_t>(node->type()));
             }
+
+            // if (sys->id == 0) {
+                // LoggerFactory::get_logger("workload")->info("Computation node finished at tick={}, node_id={}", Sys::boostedTick(), wlhd->node_id);
+            // }
 
             hw_resource->release(node);
             stats->record_end(node, Sys::boostedTick());

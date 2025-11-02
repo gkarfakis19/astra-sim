@@ -4,16 +4,16 @@
     "active-chunks-per-dimension": 2,
     "preferred-dataset-splits": 4,
     "all-reduce-implementation": [
-        "ring"
+        "torus2d"
     ],
     "all-gather-implementation": [
-        "ring"
+        "torus2d"
     ],
     "reduce-scatter-implementation": [
-        "ring"
+        "torus2d"
     ],
     "all-to-all-implementation": [
-        "ring"
+        "torus2d"
     ],
     "collective-optimization": "localBWAware",
     "local-mem-bw": 3350,

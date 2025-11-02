@@ -61,9 +61,13 @@ enum class CollectiveImplType {
     LocalRingNodeA2AGlobalDBT,
     HierarchicalRing,
     DoubleBinaryTree,
+    Torus2D,
     HalvingDoubling,
     OneHalvingDoubling,
     CustomCollectiveImpl,
+    ChakraImpl,
+    Mesh,
+    HyperCube,
 };
 
 enum class CollectiveBarrier { Blocking = 0, Non_Blocking };

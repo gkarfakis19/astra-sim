@@ -3,23 +3,23 @@ This source code is licensed under the MIT license found in the
 LICENSE file in the root directory of this source tree.
 *******************************************************************************/
 
-#ifndef __RING_HH__
-#define __RING_HH__
+#ifndef __TORUS2D_HH__
+#define __TORUS2D_HH__
 
 #include "astra-sim/system/MemBus.hh"
 #include "astra-sim/system/MyPacket.hh"
 #include "astra-sim/system/astraccl/Algorithm.hh"
-#include "astra-sim/system/astraccl/native_collectives/logical_topology/RingTopology.hh"
+#include "astra-sim/system/astraccl/native_collectives/logical_topology/Torus2DTopology.hh"
 
 namespace AstraSim {
 
-class Ring : public Algorithm {
+class Torus2D : public Algorithm {
   public:
-    Ring(ComType type,
+    Torus2D(ComType type,
          int id,
-         RingTopology* ring_topology,
+         Torus2DTopology* ring_topology,
          uint64_t data_size,
-         RingTopology::Direction direction,
+         Torus2DTopology::Direction direction,
          InjectionPolicy injection_policy);
     virtual void run(EventType event, CallData* data);
     void process_stream_count();
@@ -32,15 +32,15 @@ class Ring : public Algorithm {
     bool ready();
     void exit();
 
-    RingTopology::Direction dimension;
-    RingTopology::Direction direction;
+    Torus2DTopology::Direction dimension;
+    Torus2DTopology::Direction direction;
     MemBus::Transmition transmition;
     int zero_latency_packets;
     int non_zero_latency_packets;
     int id;
-    int curr_receiver;
-    int curr_sender;
-    int nodes_in_ring;
+    std::vector<int> curr_receivers;
+    std::vector<int> curr_senders;
+    int nodes_in_dim;
     int stream_count;
     int max_count;
     int remained_packets_per_max_count;
@@ -62,4 +62,4 @@ class Ring : public Algorithm {
 
 }  // namespace AstraSim
 
-#endif /* __RING_HH__ */
+#endif /* __TORUS2D_HH__ */
