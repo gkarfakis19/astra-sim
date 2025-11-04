@@ -14,6 +14,7 @@ LICENSE file in the root directory of this source tree.
 #include "astra-sim/system/astraccl/native_collectives/logical_topology/MeshTopology.hh"
 #include "astra-sim/system/astraccl/native_collectives/logical_topology/RingTopology.hh"
 #include "astra-sim/system/astraccl/native_collectives/logical_topology/Torus2DTopology.hh"
+#include "astra-sim/system/astraccl/native_collectives/logical_topology/Mesh2DTopology.hh"
 
 
 
@@ -90,6 +91,13 @@ GeneralComplexTopology::GeneralComplexTopology(
                 Torus2DTopology::Dimension::NA, id, dimension_size[dim],
                 (id % (offset * dimension_size[dim])) / offset, offset);
             dimension_topology.push_back(torus2d);
+        }
+        else if (collective_impl[dim]->type ==
+                   CollectiveImplType::Mesh2D) {
+            auto mesh2d = new Mesh2DTopology(
+                Mesh2DTopology::Dimension::NA, id, dimension_size[dim],
+                (id % (offset * dimension_size[dim])) / offset, offset);
+            dimension_topology.push_back(mesh2d);
         }else {
             std::cout << "no matching logical topology" << std::endl;
             exit(1);

@@ -62,6 +62,7 @@ enum class CollectiveImplType {
     HierarchicalRing,
     DoubleBinaryTree,
     Torus2D,
+    Mesh2D,
     HalvingDoubling,
     OneHalvingDoubling,
     CustomCollectiveImpl,

@@ -3,7 +3,7 @@ This source code is licensed under the MIT license found in the
 LICENSE file in the root directory of this source tree.
 *******************************************************************************/
 
-#include "astra-sim/system/astraccl/native_collectives/collective_algorithm/Torus2D.hh"
+#include "astra-sim/system/astraccl/native_collectives/collective_algorithm/Mesh2D.hh"
 
 #include <cmath>
 #include "astra-sim/system/PacketBundle.hh"
@@ -11,22 +11,22 @@ LICENSE file in the root directory of this source tree.
 
 using namespace AstraSim;
 
-Torus2D::Torus2D(ComType type,
+Mesh2D::Mesh2D(ComType type,
            int id,
-           Torus2DTopology* torus_topology,
+           Mesh2DTopology* mesh_topology,
            uint64_t data_size,
-           Torus2DTopology::Direction direction,
+           Mesh2DTopology::Direction direction,
            InjectionPolicy injection_policy)
     : Algorithm() {
     this->comType = type;
     this->id = id;
-    this->logical_topo = torus_topology;
+    this->logical_topo = mesh_topology;
     this->data_size = data_size;
     this->direction = direction;
-    this->nodes_in_dim = static_cast<int>(std::sqrt(torus_topology->get_nodes_in_torus()));
-    this->nodes_in_torus = torus_topology->get_nodes_in_torus();
-    this->curr_receivers = torus_topology->get_receivers(id, direction);
-    this->curr_senders = torus_topology->get_senders(id, direction);
+    this->nodes_in_dim = static_cast<int>(std::sqrt(mesh_topology->get_nodes_in_mesh()));
+    this->nodes_in_mesh = mesh_topology->get_nodes_in_mesh();
+    this->curr_receivers = mesh_topology->get_receivers(id, direction);
+    this->curr_senders = mesh_topology->get_senders(id, direction);
     this->parallel_reduce = 1;
     this->injection_policy = injection_policy;
     this->total_packets_sent = 0;
@@ -35,16 +35,16 @@ Torus2D::Torus2D(ComType type,
     this->zero_latency_packets = 0;
     this->non_zero_latency_packets = 0;
     this->toggle = false;
-    this->name = Name::Torus2D;
+    this->name = Name::Mesh2D;
     this->m_bidirectional = true;  // place to change bidirectional
-    if (torus_topology->get_dimension() == Torus2DTopology::Dimension::Local) {
+    if (mesh_topology->get_dimension() == Mesh2DTopology::Dimension::Local) {
         transmition = MemBus::Transmition::Fast;
     } else {
         transmition = MemBus::Transmition::Usual;
     }
     switch (type) {
     case ComType::All_Reduce:
-        stream_count = 2 * 2 * (nodes_in_dim - 1); // number of rounds
+        stream_count = 2 * (nodes_in_dim - 1); // number of rounds
         break;
     case ComType::All_to_All:
         this->stream_count = ((nodes_in_dim * nodes_in_dim - 1) * nodes_in_dim) / 2;
@@ -74,33 +74,33 @@ Torus2D::Torus2D(ComType type,
     case ComType::All_Reduce:
         if (m_bidirectional) {
             this->final_data_size = data_size;
-            this->msg_size = (data_size / nodes_in_torus); // Optimization by using both directions: divide by two;
+            this->msg_size = data_size; // Optimization by using both directions: divide by two;
         } else {
             this->final_data_size = data_size;
-            this->msg_size = data_size / nodes_in_torus;
+            this->msg_size = data_size;
         }
         break;
     case ComType::All_Gather:
-        this->final_data_size = data_size * nodes_in_torus;
+        this->final_data_size = data_size * nodes_in_mesh;
         this->msg_size = data_size;
         break;
     case ComType::Reduce_Scatter:
-        this->final_data_size = data_size / nodes_in_torus;
-        this->msg_size = data_size / nodes_in_torus;
+        this->final_data_size = data_size;
+        this->msg_size = data_size;
         break;
     case ComType::All_to_All:
         this->final_data_size = data_size;
-        this->msg_size = data_size / nodes_in_torus;
+        this->msg_size = data_size;
         break;
     default:;
     }
 }
 
-int Torus2D::get_non_zero_latency_packets() {
+int Mesh2D::get_non_zero_latency_packets() {
     return (nodes_in_dim - 1) * parallel_reduce * 1;
 }
 
-void Torus2D::run(EventType event, CallData* data) {
+void Mesh2D::run(EventType event, CallData* data) {
     if (event == EventType::General) {
         free_packets += 1;
         ready();
@@ -115,7 +115,7 @@ void Torus2D::run(EventType event, CallData* data) {
     }
 }
 
-void Torus2D::release_packets() {
+void Mesh2D::release_packets() {
     for (auto packet : locked_packets) {
         packet->set_notifier(this);
     }
@@ -131,7 +131,7 @@ void Torus2D::release_packets() {
     locked_packets.clear();
 }
 
-void Torus2D::process_stream_count() {
+void Mesh2D::process_stream_count() {
     if (remained_packets_per_message > 0) {
         remained_packets_per_message--;
     }
@@ -149,7 +149,7 @@ void Torus2D::process_stream_count() {
     }
 }
 
-void Torus2D::process_max_count() {
+void Mesh2D::process_max_count() {
     if (remained_packets_per_max_count > 0) {
         remained_packets_per_max_count--;
     }
@@ -160,14 +160,14 @@ void Torus2D::process_max_count() {
     }
 }
 
-void Torus2D::reduce() {
+void Mesh2D::reduce() {
     process_stream_count();
     packets.pop_front();
     free_packets--;
     total_packets_sent++;
 }
 
-bool Torus2D::iteratable() {
+bool Mesh2D::iteratable() {
     if (stream_count == 0 &&
         free_packets == (parallel_reduce * 1)) {  // && not_delivered==0
         exit();
@@ -176,7 +176,7 @@ bool Torus2D::iteratable() {
     return true;
 }
 
-void Torus2D::insert_packet(Callable* sender) {
+void Mesh2D::insert_packet(Callable* sender) {
     if (zero_latency_packets == 0 && non_zero_latency_packets == 0) {
         zero_latency_packets = parallel_reduce * 1;
         non_zero_latency_packets =
@@ -224,7 +224,7 @@ void Torus2D::insert_packet(Callable* sender) {
     Sys::sys_panic("should not inject nothing!");
 }
 
-bool Torus2D::ready() {
+bool Mesh2D::ready() {
     if (stream->state == StreamState::Created ||
         stream->state == StreamState::Ready) {
         stream->changeState(StreamState::Executing);
@@ -258,7 +258,7 @@ bool Torus2D::ready() {
     return true;
 }
 
-void Torus2D::exit() {
+void Mesh2D::exit() {
     if (packets.size() != 0) {
         packets.clear();
     }

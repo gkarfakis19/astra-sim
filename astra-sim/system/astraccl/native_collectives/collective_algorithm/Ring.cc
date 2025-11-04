@@ -72,7 +72,7 @@ Ring::Ring(ComType type,
     case ComType::All_Reduce:
         if (m_bidirectional) {
             this->final_data_size = data_size;
-            this->msg_size = (data_size / nodes_in_ring) / 2;
+            this->msg_size = (data_size / nodes_in_ring); // Optimization by using both directions: divide by two;
         } else {
             this->final_data_size = data_size;
             this->msg_size = data_size / nodes_in_ring;

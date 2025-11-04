@@ -21,7 +21,9 @@ class Algorithm : public Callable {
         AllToAll,
         HalvingDoubling,
         Mesh,
-        HyperCube
+        HyperCube,
+        Torus2D,
+        Mesh2D
     };
 
     Algorithm();

@@ -21,44 +21,44 @@ Torus2DTopology::Torus2DTopology(Dimension dimension, int id, std::vector<int> N
         name = "horizontal";
     }
     this->id = id;
-    this->total_nodes_in_ring = NPUs.size();
+    this->total_nodes_in_torus = NPUs.size();
     this->dimension = dimension;
     this->offset = -1;
-    this->index_in_ring = -1;
+    this->index_in_torus = -1;
     
     // Initialize dims
     if (dimension == Dimension::Local) {
-        dims = {total_nodes_in_ring};
+        dims = {total_nodes_in_torus};
     } else if (dimension == Dimension::Horizontal || dimension == Dimension::Vertical) {
-        int dim_size = static_cast<int>(std::sqrt(total_nodes_in_ring));
+        int dim_size = static_cast<int>(std::sqrt(total_nodes_in_torus));
         dims = {dim_size, dim_size};
     } else {
-        dims = {total_nodes_in_ring};
+        dims = {total_nodes_in_torus};
     }
 
-    for (int i = 0; i < total_nodes_in_ring; i++) {
+    for (int i = 0; i < total_nodes_in_torus; i++) {
         id_to_index[NPUs[i]] = i;
         index_to_id[i] = NPUs[i];
         if (id == NPUs[i]) {
-            index_in_ring = i;
+            index_in_torus = i;
         }
     }
 
     LoggerFactory::get_logger("system::topology::Torus2DTopology")
-        ->info("custom ring, id: {}, dimension: {} total nodes in ring: {} "
-               "index in ring: {} total nodes in ring {}",
-               id, name, total_nodes_in_ring, index_in_ring,
-               total_nodes_in_ring);
+        ->info("custom torus, id: {}, dimension: {} total nodes in torus: {} "
+               "index in torus: {} total nodes in torus {}",
+               id, name, total_nodes_in_torus, index_in_torus,
+               total_nodes_in_torus);
 
-    assert(index_in_ring >= 0);
+    assert(index_in_torus >= 0);
 }
 
 Torus2DTopology::Torus2DTopology(Dimension dimension,
                            int id,
-                           int total_nodes_in_ring,
-                           int index_in_ring,
+                           int total_nodes_in_torus,
+                           int index_in_torus,
                            int offset)
-    : BasicLogicalTopology(BasicLogicalTopology::BasicTopology::Ring) {
+    : BasicLogicalTopology(BasicLogicalTopology::BasicTopology::Torus2D) {
     name = "local";
     if (dimension == Dimension::Vertical) {
         name = "vertical";
@@ -67,31 +67,31 @@ Torus2DTopology::Torus2DTopology(Dimension dimension,
     }
     if (id == 0) {
         LoggerFactory::get_logger("system::topology::Torus2DTopology")
-            ->info("ring of node 0, id: {} dimension: {} total nodes in ring: "
-                   "{} index in ring: {} offset: {} total nodes in ring: {}",
-                   id, name, total_nodes_in_ring, index_in_ring, offset,
-                   total_nodes_in_ring);
+            ->info("torus of node 0, id: {} dimension: {} total nodes in torus: "
+                   "{} index in torus: {} offset: {} total nodes in torus: {}",
+                   id, name, total_nodes_in_torus, index_in_torus, offset,
+                   total_nodes_in_torus);
     }
     this->id = id;
-    this->total_nodes_in_ring = total_nodes_in_ring;
-    this->index_in_ring = index_in_ring;
+    this->total_nodes_in_torus = total_nodes_in_torus;
+    this->index_in_torus = index_in_torus;
     this->dimension = dimension;
     this->offset = offset;
 
     // Initialize dims
     if (dimension == Dimension::Local) {
-        dims = {total_nodes_in_ring};
+        dims = {total_nodes_in_torus};
     } else if (dimension == Dimension::Horizontal || dimension == Dimension::Vertical) {
-        int dim_size = static_cast<int>(std::sqrt(total_nodes_in_ring));
+        int dim_size = static_cast<int>(std::sqrt(total_nodes_in_torus));
         dims = {dim_size, dim_size};
     } else {
-        dims = {total_nodes_in_ring};
+        dims = {total_nodes_in_torus};
     }
 
-    id_to_index[id] = index_in_ring;
-    index_to_id[index_in_ring] = id;
+    id_to_index[id] = index_in_torus;
+    index_to_id[index_in_torus] = id;
     int tmp = id;
-    for (int i = 0; i < total_nodes_in_ring - 1; i++) {
+    for (int i = 0; i < total_nodes_in_torus - 1; i++) {
         tmp = get_receiver_homogeneous(tmp, Torus2DTopology::Direction::Clockwise,
                                        offset);
     }
@@ -105,8 +105,8 @@ int Torus2DTopology::get_receiver_homogeneous(int node_id,
     int index = id_to_index[node_id];
     if (direction == Torus2DTopology::Direction::Clockwise) {
         int receiver = node_id + offset;
-        if (index == total_nodes_in_ring - 1) {
-            receiver -= (total_nodes_in_ring * offset);
+        if (index == total_nodes_in_torus - 1) {
+            receiver -= (total_nodes_in_torus * offset);
             index = 0;
         } else {
             index++;
@@ -114,9 +114,9 @@ int Torus2DTopology::get_receiver_homogeneous(int node_id,
         if (receiver < 0) {
             LoggerFactory::get_logger("system::topology::Torus2DTopology")
                 ->critical("at dim: {} at id: {} dimension: {} index: {}, node "
-                           "id: {}, offset: {}, index_in_ring {} receiver {}",
+                           "id: {}, offset: {}, index_in_torus {} receiver {}",
                            name, id, name, index, node_id, offset,
-                           index_in_ring, receiver);
+                           index_in_torus, receiver);
         }
         assert(receiver >= 0);
         id_to_index[receiver] = index;
@@ -125,17 +125,17 @@ int Torus2DTopology::get_receiver_homogeneous(int node_id,
     } else {
         int receiver = node_id - offset;
         if (index == 0) {
-            receiver += (total_nodes_in_ring * offset);
-            index = total_nodes_in_ring - 1;
+            receiver += (total_nodes_in_torus * offset);
+            index = total_nodes_in_torus - 1;
         } else {
             index--;
         }
         if (receiver < 0) {
             LoggerFactory::get_logger("system::topology::Torus2DTopology")
                 ->critical("at dim: {} at id: {} dimension: {} index: {}, node "
-                           "id: {}, offset: {}, index_in_ring {} receiver {}",
+                           "id: {}, offset: {}, index_in_torus {} receiver {}",
                            name, id, name, index, node_id, offset,
-                           index_in_ring, receiver);
+                           index_in_torus, receiver);
         }
         assert(receiver >= 0);
         id_to_index[receiver] = index;
@@ -152,9 +152,9 @@ std::vector<int> Torus2DTopology::get_receivers(int node_id, Torus2DTopology::Di
 
     std::vector<int> receivers;
 
-    // 1D ring fallback
+    // 1D torus fallback
     if (dims.empty() || dims.size() == 1) {
-        int n = total_nodes_in_ring;
+        int n = total_nodes_in_torus;
         if (n <= 1) return receivers;
         if (direction == Torus2DTopology::Direction::Clockwise) {
             int cw_index = (index + 1) % n;
@@ -211,9 +211,9 @@ std::vector<int> Torus2DTopology::get_senders(int node_id, Torus2DTopology::Dire
 
     std::vector<int> receivers;
 
-    // 1D ring fallback
+    // 1D torus fallback
     if (dims.empty() || dims.size() == 1) {
-        int n = total_nodes_in_ring;
+        int n = total_nodes_in_torus;
         if (n <= 1) return receivers;
         if (direction == Torus2DTopology::Direction::Anticlockwise) {
             int cw_index = (index + 1) % n;
@@ -263,8 +263,8 @@ std::vector<int> Torus2DTopology::get_senders(int node_id, Torus2DTopology::Dire
 }
 
 
-int Torus2DTopology::get_index_in_ring() {
-    return index_in_ring;
+int Torus2DTopology::get_index_in_torus() {
+    return index_in_torus;
 }
 
 Torus2DTopology::Dimension Torus2DTopology::get_dimension() {
@@ -272,16 +272,16 @@ Torus2DTopology::Dimension Torus2DTopology::get_dimension() {
 }
 
 int Torus2DTopology::get_num_of_nodes_in_dimension(int dimension) {
-    return get_nodes_in_ring();
+    return get_nodes_in_torus();
 }
 
-int Torus2DTopology::get_nodes_in_ring() {
-    return total_nodes_in_ring;
+int Torus2DTopology::get_nodes_in_torus() {
+    return total_nodes_in_torus;
 }
 
 bool Torus2DTopology::is_enabled() {
     assert(offset > 0);
-    int tmp_index = index_in_ring;
+    int tmp_index = index_in_torus;
     int tmp_id = id;
     while (tmp_index > 0) {
         tmp_index--;

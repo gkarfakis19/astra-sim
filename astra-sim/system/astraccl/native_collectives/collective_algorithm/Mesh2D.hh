@@ -3,23 +3,23 @@ This source code is licensed under the MIT license found in the
 LICENSE file in the root directory of this source tree.
 *******************************************************************************/
 
-#ifndef __TORUS2D_HH__
-#define __TORUS2D_HH__
+#ifndef __MESH2D_HH__
+#define __MESH2D_HH__
 
 #include "astra-sim/system/MemBus.hh"
 #include "astra-sim/system/MyPacket.hh"
 #include "astra-sim/system/astraccl/Algorithm.hh"
-#include "astra-sim/system/astraccl/native_collectives/logical_topology/Torus2DTopology.hh"
+#include "astra-sim/system/astraccl/native_collectives/logical_topology/Mesh2DTopology.hh"
 
 namespace AstraSim {
 
-class Torus2D : public Algorithm {
+class Mesh2D : public Algorithm {
   public:
-    Torus2D(ComType type,
+    Mesh2D(ComType type,
          int id,
-         Torus2DTopology* torus_topology,
+         Mesh2DTopology* mesh_topology,
          uint64_t data_size,
-         Torus2DTopology::Direction direction,
+         Mesh2DTopology::Direction direction,
          InjectionPolicy injection_policy);
     virtual void run(EventType event, CallData* data);
     void process_stream_count();
@@ -32,8 +32,8 @@ class Torus2D : public Algorithm {
     bool ready();
     void exit();
 
-    Torus2DTopology::Direction dimension;
-    Torus2DTopology::Direction direction;
+    Mesh2DTopology::Direction dimension;
+    Mesh2DTopology::Direction direction;
     MemBus::Transmition transmition;
     int zero_latency_packets;
     int non_zero_latency_packets;
@@ -41,7 +41,7 @@ class Torus2D : public Algorithm {
     std::vector<int> curr_receivers;
     std::vector<int> curr_senders;
     int nodes_in_dim;
-    int nodes_in_torus;
+    int nodes_in_mesh;
     int stream_count;
     int max_count;
     int remained_packets_per_max_count;
@@ -63,4 +63,4 @@ class Torus2D : public Algorithm {
 
 }  // namespace AstraSim
 
-#endif /* __TORUS2D_HH__ */
+#endif /* __MESH2D_HH__ */

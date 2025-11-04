@@ -30,6 +30,7 @@ LICENSE file in the root directory of this source tree.
 #include "astra-sim/system/astraccl/native_collectives/collective_algorithm/Mesh.hh"
 #include "astra-sim/system/astraccl/native_collectives/collective_algorithm/Ring.hh"
 #include "astra-sim/system/astraccl/native_collectives/collective_algorithm/Torus2D.hh"
+#include "astra-sim/system/astraccl/native_collectives/collective_algorithm/Mesh2D.hh"
 #include "astra-sim/system/astraccl/native_collectives/logical_topology/BasicLogicalTopology.hh"
 #include "astra-sim/system/astraccl/native_collectives/logical_topology/GeneralComplexTopology.hh"
 #include "astra-sim/system/scheduling/OfflineGreedy.hh"
@@ -530,6 +531,8 @@ CollectiveImpl* Sys::generate_collective_impl_from_input(
         return new CollectiveImpl(CollectiveImplType::DoubleBinaryTree);
     } else if (collective_impl_str == "torus2d") {
         return new CollectiveImpl(CollectiveImplType::Torus2D);
+    }else if (collective_impl_str == "mesh2d") {
+        return new CollectiveImpl(CollectiveImplType::Mesh2D);
     } else if (collective_impl_str.rfind("direct", 0) == 0) {
         int window = -1;
         if (collective_impl_str != "direct") {
@@ -1125,7 +1128,15 @@ CollectivePhase Sys::generate_collective_phase(
                      static_cast<Torus2DTopology::Direction>(direction),
                      injection_policy));
         return vn;
-    } else {
+    } 
+    else if (collective_impl->type == CollectiveImplType::Mesh2D) {
+        CollectivePhase vn(
+            this, queue_id,
+            new Mesh2D(collective_type, id, (Mesh2DTopology*)topology, data_size,
+                     static_cast<Mesh2DTopology::Direction>(direction),
+                     injection_policy));
+        return vn;
+    }else {
         LoggerFactory::get_logger("system")->critical(
             "Error: No known collective implementation for collective phase");
         exit(1);
