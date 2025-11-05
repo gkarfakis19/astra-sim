@@ -1,6 +1,6 @@
-topology: [ KingMesh2D ]
-npus_count: [ 16 ]
-bandwidth: [ 0.012207 ]  # GB/s
-latency: [ 5.0 ]  # ns
+topology: [ Ring, Ring ]
+npus_count: [ 4, 4 ]
+bandwidth: [ 0.012207, 0.012207 ]  # GB/s
+latency: [ 5.0, 5.0 ]  # ns
 
-faulty_links: [[4, 9, 0.8]]
+faulty_links: [[4, 5, 0.8]]
