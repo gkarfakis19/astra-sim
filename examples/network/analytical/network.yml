@@ -1,6 +1,6 @@
-topology: [ FullyConnected ]
+topology: [ KingMesh2D ]
 npus_count: [ 16 ]
 bandwidth: [ 0.012207 ]  # GB/s
 latency: [ 5.0 ]  # ns
 
-faulty_links: [[4, 5, 0.6]]
+faulty_links: [[4, 9, 0.8]]
