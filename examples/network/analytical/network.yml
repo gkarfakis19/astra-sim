@@ -1,6 +1,6 @@
-topology: [ Ring, Ring ]
-npus_count: [ 4, 4 ]
-bandwidth: [ 0.012207, 0.012207 ]  # GB/s
-latency: [ 5.0, 5.0 ]  # ns
+topology: [ Ring ]
+npus_count: [ 16 ]
+bandwidth: [ 0.012207 ]  # GB/s
+latency: [ 5.0 ]  # ns
 
-faulty_links: [[4, 5, 0.6]]
+faulty_links: [[4, 5, 0.6], [8, 9, 0.8]]

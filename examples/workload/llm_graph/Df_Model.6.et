@@ -1,0 +1,9 @@
+¸
+schemaê1.0.2-chakra.0.0.4–
+
+input_fileê†MODEL
+1
+layer1    	-1 	5404      	ALLGATHER 	805306368 	3590      	ALLREDUCE 	12884901888	3590      	NONE      	8388071   	10        
+COMP_NODE_layer1_FWD8œ*JCOMM_COLL_NODE_layer1_ALLGATHER*R
+	comm_typeHR
+	comm_sizeH€€€€#COMP_NODE_layer1_BWD_IG*8†#COMP_NODE_layer1_BWD_WG*8†
