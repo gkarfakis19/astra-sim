@@ -1,0 +1,4 @@
+topology: [ Torus2D ]
+npus_count: [ 16 ]
+bandwidth: [ 25.0 ]  # GB/s
+latency: [ 5000.0 ]   # ns

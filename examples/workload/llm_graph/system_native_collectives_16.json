@@ -1,0 +1,23 @@
+{
+  "scheduling-policy": "LIFO",
+  "endpoint-delay": 5,
+  "active-chunks-per-dimension": 32,
+  "preferred-dataset-splits": 4,
+  "all-reduce-implementation": [
+    "torus2d"
+  ],
+  "all-gather-implementation": [
+    "torus2d"
+  ],
+  "reduce-scatter-implementation": [
+    "torus2d"
+  ],
+  "all-to-all-implementation": [
+    "torus2d"
+  ],
+  "collective-optimization": "localBWAware",
+  "local-mem-bw": 1600,
+  "boost-mode": 0,
+  "roofline-enabled": 0,
+  "peak-perf": 900
+}

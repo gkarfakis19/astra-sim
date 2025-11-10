@@ -25,6 +25,17 @@ MeshTopology::MeshTopology(Dimension dimension, int id, std::vector<int> NPUs)
     this->dimension = dimension;
     this->offset = -1;
     this->index_in_mesh = -1;
+
+    // Initialize dims
+    if (dimension == Dimension::Local) {
+        dims = {total_nodes_in_mesh};
+    } else if (dimension == Dimension::Horizontal || dimension == Dimension::Vertical) {
+        int dim_size = static_cast<int>(std::sqrt(total_nodes_in_mesh));
+        dims = {dim_size, dim_size};
+    } else {
+        dims = {total_nodes_in_mesh};
+    }
+
     for (int i = 0; i < total_nodes_in_mesh; i++) {
         id_to_index[NPUs[i]] = i;
         index_to_id[i] = NPUs[i];
@@ -41,6 +52,7 @@ MeshTopology::MeshTopology(Dimension dimension, int id, std::vector<int> NPUs)
 
     assert(index_in_mesh >= 0);
 }
+
 MeshTopology::MeshTopology(Dimension dimension,
                            int id,
                            int total_nodes_in_mesh,
@@ -66,6 +78,16 @@ MeshTopology::MeshTopology(Dimension dimension,
     this->dimension = dimension;
     this->offset = offset;
 
+    // Initialize dims
+    if (dimension == Dimension::Local) {
+        dims = {total_nodes_in_mesh};
+    } else if (dimension == Dimension::Horizontal || dimension == Dimension::Vertical) {
+        int dim_size = static_cast<int>(std::sqrt(total_nodes_in_mesh));
+        dims = {dim_size, dim_size};
+    } else {
+        dims = {total_nodes_in_mesh};
+    }
+
     id_to_index[id] = index_in_mesh;
     index_to_id[index_in_mesh] = id;
     int tmp = id;
@@ -74,6 +96,7 @@ MeshTopology::MeshTopology(Dimension dimension,
                                        offset);
     }
 }
+
 
 int MeshTopology::get_receiver_homogeneous(int node_id,
                                            Direction direction,
@@ -139,6 +162,66 @@ int MeshTopology::get_receiver(int node_id, Direction direction) {
     }
 }
 
+std::vector<int> MeshTopology::get_receivers(int node_id, MeshTopology::Direction direction) const {
+    assert(id_to_index.find(node_id) != id_to_index.end());
+    int index = id_to_index.at(node_id);
+
+    std::vector<int> receivers;
+
+    // 1D mesh fallback
+    if (dims.empty() || dims.size() == 1) {
+        int n = total_nodes_in_mesh;
+        if (n <= 1) return receivers;
+        if (direction == MeshTopology::Direction::Clockwise) {
+            int cw_index = (index + 1) % n;
+            receivers.push_back(index_to_id.at(cw_index));
+        } else {
+            int ccw_index = (index - 1 + n) % n;
+            receivers.push_back(index_to_id.at(ccw_index));
+        }
+        return receivers;
+    }
+
+    // multi-dimensional case
+    const int num_dims = static_cast<int>(dims.size());
+    std::vector<int> coords(num_dims);
+
+    int tmp = index;
+    for (int d = num_dims - 1; d >= 0; --d) {
+        coords[d] = tmp % dims[d];
+        tmp /= dims[d];
+    }
+
+    if (direction == MeshTopology::Direction::Clockwise) {
+        // Clockwise => +1 along each dimension
+        for (int d = 0; d < num_dims; ++d) {
+            std::vector<int> new_coords = coords;
+            new_coords[d] = (new_coords[d] + 1) % dims[d];
+            int new_index = 0;
+            for (int k = 0; k < num_dims; ++k) {
+                new_index = new_index * dims[k] + new_coords[k];
+            }
+            receivers.push_back(index_to_id.at(new_index));
+        }
+    } else {
+        // Anticlockwise => -1 along each dimension
+        for (int d = 0; d < num_dims; ++d) {
+            std::vector<int> new_coords = coords;
+            new_coords[d] = (new_coords[d] - 1 + dims[d]) % dims[d];
+            int new_index = 0;
+            for (int k = 0; k < num_dims; ++k) {
+                new_index = new_index * dims[k] + new_coords[k];
+            }
+            receivers.push_back(index_to_id.at(new_index));
+        }
+    }
+
+    return receivers;
+}
+
+
+
+
 int MeshTopology::get_sender(int node_id, Direction direction) {
     assert(id_to_index.find(node_id) != id_to_index.end());
     int index = id_to_index[node_id];
@@ -156,6 +239,64 @@ int MeshTopology::get_sender(int node_id, Direction direction) {
         return index_to_id[index];
     }
 }
+
+std::vector<int> MeshTopology::get_senders(int node_id, MeshTopology::Direction direction) const {
+    assert(id_to_index.find(node_id) != id_to_index.end());
+    int index = id_to_index.at(node_id);
+
+    std::vector<int> receivers;
+
+    // 1D mesh fallback
+    if (dims.empty() || dims.size() == 1) {
+        int n = total_nodes_in_mesh;
+        if (n <= 1) return receivers;
+        if (direction == MeshTopology::Direction::Anticlockwise) {
+            int cw_index = (index + 1) % n;
+            receivers.push_back(index_to_id.at(cw_index));
+        } else {
+            int ccw_index = (index - 1 + n) % n;
+            receivers.push_back(index_to_id.at(ccw_index));
+        }
+        return receivers;
+    }
+
+    // multi-dimensional case
+    const int num_dims = static_cast<int>(dims.size());
+    std::vector<int> coords(num_dims);
+
+    int tmp = index;
+    for (int d = num_dims - 1; d >= 0; --d) {
+        coords[d] = tmp % dims[d];
+        tmp /= dims[d];
+    }
+
+    if (direction == MeshTopology::Direction::Anticlockwise) {
+        // Clockwise => +1 along each dimension
+        for (int d = 0; d < num_dims; ++d) {
+            std::vector<int> new_coords = coords;
+            new_coords[d] = (new_coords[d] + 1) % dims[d];
+            int new_index = 0;
+            for (int k = 0; k < num_dims; ++k) {
+                new_index = new_index * dims[k] + new_coords[k];
+            }
+            receivers.push_back(index_to_id.at(new_index));
+        }
+    } else {
+        // Anticlockwise => -1 along each dimension
+        for (int d = 0; d < num_dims; ++d) {
+            std::vector<int> new_coords = coords;
+            new_coords[d] = (new_coords[d] - 1 + dims[d]) % dims[d];
+            int new_index = 0;
+            for (int k = 0; k < num_dims; ++k) {
+                new_index = new_index * dims[k] + new_coords[k];
+            }
+            receivers.push_back(index_to_id.at(new_index));
+        }
+    }
+
+    return receivers;
+}
+
 
 int MeshTopology::get_index_in_mesh() {
     return index_in_mesh;
